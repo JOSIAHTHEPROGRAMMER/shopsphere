@@ -19,6 +19,9 @@ target/
 *.iml
 *.ipr
 
+postman/
+.postman/
+seed/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
