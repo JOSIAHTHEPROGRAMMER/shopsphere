@@ -1,5 +1,6 @@
 package com.app.shopsphere.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -28,16 +29,19 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getProducts(
-            @RequestParam(required = false) Boolean active) {
-
-        if (active == null) {
-            return ResponseEntity.ok(productService.getAllProducts());
-        }
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
 
         return ResponseEntity.ok(
-                active
-                        ? productService.getAllActiveProducts()
-                        : productService.getAllInactiveProducts());
+                productService.getProducts(
+                        active,
+                        keyword,
+                        category,
+                        minPrice,
+                        maxPrice));
     }
 
     @GetMapping("/{id}")
@@ -56,13 +60,6 @@ public class ProductController {
         return created
                 ? ResponseEntity.ok("Product created successfully")
                 : ResponseEntity.badRequest().body("Failed to create product");
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<ProductResponse>> searchProducts(
-            @RequestParam String keyword) {
-
-        return ResponseEntity.ok(productService.searchProducts(keyword));
     }
 
     @PutMapping("/{id}")
@@ -86,5 +83,4 @@ public class ProductController {
                 ? ResponseEntity.ok("Product deleted successfully")
                 : ResponseEntity.badRequest().body("Failed to delete product");
     }
-
 }

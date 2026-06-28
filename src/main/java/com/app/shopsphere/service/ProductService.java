@@ -1,5 +1,6 @@
 package com.app.shopsphere.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,36 +65,23 @@ public class ProductService {
                 .orElse(false);
     }
 
-    public List<ProductResponse> getAllProducts() {
+    public List<ProductResponse> getProducts(
+            Boolean active,
+            String keyword,
+            String category,
+            BigDecimal minPrice,
+            BigDecimal maxPrice) {
 
         return productRepository.findAll()
                 .stream()
-                .map(this::mapToProductResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<ProductResponse> getAllActiveProducts() {
-
-        return productRepository.findByActive(true)
-                .stream()
-                .map(this::mapToProductResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<ProductResponse> getAllInactiveProducts() {
-
-        return productRepository.findByActive(false)
-                .stream()
-                .map(this::mapToProductResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<ProductResponse> searchProducts(String keyword) {
-
-        return productRepository
-                .findByActiveTrueAndNameContainingIgnoreCaseOrActiveTrueAndDescriptionContainingIgnoreCaseOrActiveTrueAndCategoryContainingIgnoreCase(
-                        keyword, keyword, keyword)
-                .stream()
+                .filter(product -> active == null || product.getActive().equals(active))
+                .filter(product -> keyword == null || keyword.isBlank()
+                        || product.getName().toLowerCase().contains(keyword.toLowerCase())
+                        || product.getDescription().toLowerCase().contains(keyword.toLowerCase()))
+                .filter(product -> category == null || category.isBlank()
+                        || product.getCategory().equalsIgnoreCase(category))
+                .filter(product -> minPrice == null || product.getPrice().compareTo(minPrice) >= 0)
+                .filter(product -> maxPrice == null || product.getPrice().compareTo(maxPrice) <= 0)
                 .map(this::mapToProductResponse)
                 .collect(Collectors.toList());
     }
