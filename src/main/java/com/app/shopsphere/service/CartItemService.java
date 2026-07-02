@@ -1,6 +1,7 @@
 package com.app.shopsphere.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.app.shopsphere.dto.CartRequest;
 import com.app.shopsphere.dto.CartResponse;
+import com.app.shopsphere.dto.CartSummary;
 import com.app.shopsphere.model.CartItem;
 import com.app.shopsphere.model.Product;
 import com.app.shopsphere.model.User;
@@ -26,6 +28,7 @@ public class CartItemService {
     private final ProductRepository productRepository;
     private final CartItemRepository cartRepository;
     private final UserRepository userRepository;
+    private static final BigDecimal TAX_RATE = new BigDecimal("0.07");
 
     public boolean addToCart(String userId, CartRequest cartReq) {
 
@@ -36,6 +39,10 @@ public class CartItemService {
         }
 
         Product product = productOpt.get();
+
+        if (!product.getActive()) {
+            return false;
+        }
 
         if (product.getStockQuantity() < cartReq.getQuantity())
             return false;
@@ -91,6 +98,120 @@ public class CartItemService {
         }
 
         cartRepository.delete(cartItem);
+        return true;
+    }
+
+    public void clearCart(String userId) {
+
+        userRepository.findById(Long.valueOf(userId))
+                .ifPresent(user -> cartRepository.deleteByUser(user));
+    }
+
+    public boolean addMultipleToCart(
+            String userId,
+            List<CartRequest> cartRequests) {
+
+        for (CartRequest cartRequest : cartRequests) {
+
+            if (!addToCart(userId, cartRequest)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public Optional<CartSummary> getCartSummary(String userId) {
+
+        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
+
+        if (userOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<CartItem> cartItems = cartRepository.findByUserId(Long.valueOf(userId));
+
+        int totalItems = cartItems.stream()
+                .mapToInt(item -> {
+                    Integer qty = item.getQuantity();
+                    return qty != null ? qty : 0;
+                })
+                .sum();
+
+        int totalUniqueItems = cartItems.size();
+
+        BigDecimal subtotal = cartItems.stream()
+                .map(item -> item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal estimatedTax = subtotal
+                .multiply(TAX_RATE)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal total = subtotal
+                .add(estimatedTax)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        CartSummary summary = new CartSummary();
+
+        summary.setTotalItems(totalItems);
+        summary.setTotalUniqueItems(totalUniqueItems);
+        summary.setSubtotal(subtotal);
+        summary.setEstimatedTax(estimatedTax);
+        summary.setTotal(total);
+
+        return Optional.of(summary);
+    }
+
+    public boolean updateCartItem(
+            String userId,
+            CartRequest cartReq) {
+
+        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
+
+        if (userOpt.isEmpty()) {
+            return false;
+        }
+        Long productId = cartReq.getProductId();
+
+        Optional<Product> productOpt = productRepository.findById(productId);
+
+        if (productOpt.isEmpty()) {
+            return false;
+        }
+
+        User user = userOpt.get();
+        Product product = productOpt.get();
+
+        CartItem cartItem = cartRepository.findByUserAndProduct(user, product);
+
+        if (cartItem == null) {
+            return false;
+        }
+
+        if (!product.getActive()) {
+            return false;
+        }
+
+        if (cartReq.getQuantity() <= 0) {
+
+            cartRepository.delete(cartItem);
+            return true;
+        }
+
+        if (cartReq.getQuantity() > product.getStockQuantity()) {
+            return false;
+        }
+
+        cartItem.setQuantity(cartReq.getQuantity());
+
+        cartItem.setPrice(
+                product.getPrice().multiply(
+                        BigDecimal.valueOf(cartReq.getQuantity())));
+
+        cartRepository.save(cartItem);
+
         return true;
     }
 

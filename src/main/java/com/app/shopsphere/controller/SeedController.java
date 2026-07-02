@@ -40,4 +40,28 @@ public class SeedController {
         }
     }
 
+    @PostMapping("/carts")
+    public ResponseEntity<String> seedCarts() {
+
+        try {
+            seedService.seedCarts();
+            return ResponseEntity.ok("Carts seeded successfully.");
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError()
+                    .body("Failed to seed carts: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/orders")
+    public ResponseEntity<String> seedOrders() {
+
+        try {
+            seedService.seedOrders();
+            return ResponseEntity.ok("Orders seeded successfully.");
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError()
+                    .body("Failed to seed orders: " + e.getMessage());
+        }
+    }
+
 }
