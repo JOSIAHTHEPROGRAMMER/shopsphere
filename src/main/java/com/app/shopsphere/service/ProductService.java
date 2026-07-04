@@ -1,16 +1,22 @@
 package com.app.shopsphere.service;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.app.shopsphere.dto.PagedResponse;
 import com.app.shopsphere.dto.ProductRequest;
 import com.app.shopsphere.dto.ProductResponse;
 import com.app.shopsphere.model.Product;
 import com.app.shopsphere.repository.ProductRepository;
+import com.app.shopsphere.specification.ProductSpecification;
 
 import lombok.RequiredArgsConstructor;
 
@@ -65,25 +71,50 @@ public class ProductService {
                 .orElse(false);
     }
 
-    public List<ProductResponse> getProducts(
+    public PagedResponse<ProductResponse> getProducts(
             Boolean active,
             String keyword,
             String category,
             BigDecimal minPrice,
-            BigDecimal maxPrice) {
+            BigDecimal maxPrice,
+            Boolean inStock,
+            Integer minStock,
+            int page,
+            int size,
+            String sort,
+            String direction) {
 
-        return productRepository.findAll()
-                .stream()
-                .filter(product -> active == null || product.getActive().equals(active))
-                .filter(product -> keyword == null || keyword.isBlank()
-                        || product.getName().toLowerCase().contains(keyword.toLowerCase())
-                        || product.getDescription().toLowerCase().contains(keyword.toLowerCase()))
-                .filter(product -> category == null || category.isBlank()
-                        || product.getCategory().equalsIgnoreCase(category))
-                .filter(product -> minPrice == null || product.getPrice().compareTo(minPrice) >= 0)
-                .filter(product -> maxPrice == null || product.getPrice().compareTo(maxPrice) <= 0)
-                .map(this::mapToProductResponse)
-                .collect(Collectors.toList());
+        Specification<Product> spec = Specification.where(ProductSpecification.hasActive(active))
+                .and(ProductSpecification.hasKeyword(keyword))
+                .and(ProductSpecification.hasCategory(category))
+                .and(ProductSpecification.hasMinPrice(minPrice))
+                .and(ProductSpecification.hasMaxPrice(maxPrice))
+                .and(ProductSpecification.hasInStock(inStock))
+                .and(ProductSpecification.hasMinStock(minStock));
+
+        Sort sortObj = "desc".equalsIgnoreCase(direction)
+                ? Sort.by(sort).descending()
+                : Sort.by(sort).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
+
+        PagedResponse<ProductResponse> response = new PagedResponse<>();
+
+        response.setContent(
+                productPage.getContent()
+                        .stream()
+                        .map(this::mapToProductResponse)
+                        .collect(Collectors.toList()));
+
+        response.setPageNumber(productPage.getNumber());
+        response.setPageSize(productPage.getSize());
+        response.setTotalElements(productPage.getTotalElements());
+        response.setTotalPages(productPage.getTotalPages());
+        response.setLast(productPage.isLast());
+
+        return response;
     }
 
     private void updateProductFromRequest(Product product, ProductRequest productReq) {

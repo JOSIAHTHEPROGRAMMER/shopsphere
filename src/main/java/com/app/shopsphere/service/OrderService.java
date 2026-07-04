@@ -1,6 +1,8 @@
 package com.app.shopsphere.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -8,10 +10,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.app.shopsphere.dto.OrderItemResponse;
 import com.app.shopsphere.dto.OrderResponse;
+import com.app.shopsphere.dto.OrderStatsResponse;
 import com.app.shopsphere.enum_values.OrderStatus;
 import com.app.shopsphere.model.CartItem;
 import com.app.shopsphere.model.Order;
@@ -154,6 +160,60 @@ public class OrderService {
         cartRepository.deleteAll(cartItems);
 
         return true;
+    }
+
+    public Optional<OrderStatsResponse> getOrderStats(Long userId) {
+
+        if (userRepository.findById(userId).isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<Order> orders = orderRepository.findByUserId(userId);
+
+        int ordersPlaced = orders.size();
+
+        int cancelledOrders = (int) orders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.CANCELLED)
+                .count();
+
+        List<Order> completedOrders = orders.stream()
+                .filter(order -> order.getStatus() != OrderStatus.CANCELLED)
+                .collect(Collectors.toList());
+
+        BigDecimal moneySpent = completedOrders.stream()
+                .map(order -> order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal averageOrder = completedOrders.isEmpty()
+                ? BigDecimal.ZERO
+                : moneySpent.divide(BigDecimal.valueOf(completedOrders.size()), 2, RoundingMode.HALF_UP);
+
+        LocalDateTime lastOrderDate = orders.stream()
+                .map(order -> order.getCreatedAt())
+                .filter(createdAt -> createdAt != null)
+                .max((a, b) -> a.compareTo(b))
+                .orElse(null);
+
+        OrderStatsResponse stats = new OrderStatsResponse();
+
+        stats.setOrdersPlaced(ordersPlaced);
+        stats.setMoneySpent(moneySpent);
+        stats.setAverageOrder(averageOrder);
+        stats.setCancelledOrders(cancelledOrders);
+        stats.setLastOrderDate(lastOrderDate);
+
+        return Optional.of(stats);
+    }
+
+    public List<OrderResponse> getRecentOrders(int limit) {
+
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());
+
+        return orderRepository.findAll(pageable)
+                .stream()
+                .map(this::mapToOrderResponse)
+                .collect(Collectors.toList());
     }
 
     public Optional<OrderResponse> getOrderById(Long id) {

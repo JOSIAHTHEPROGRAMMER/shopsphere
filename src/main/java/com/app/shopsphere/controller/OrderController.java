@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.shopsphere.dto.OrderResponse;
+import com.app.shopsphere.dto.OrderStatsResponse;
 import com.app.shopsphere.dto.OrderStatusUpdateRequest;
 import com.app.shopsphere.enum_values.OrderStatus;
 import com.app.shopsphere.service.OrderService;
@@ -89,6 +90,15 @@ public class OrderController {
         return cancelled
                 ? ResponseEntity.ok("Order cancelled successfully")
                 : ResponseEntity.badRequest().body("Order cannot be cancelled");
+    }
+
+    @GetMapping("/me/stats")
+    public ResponseEntity<OrderStatsResponse> getMyOrderStats(
+            @RequestHeader("User-ID") String userId) {
+
+        return orderService.getOrderStats(Long.valueOf(userId))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
 }

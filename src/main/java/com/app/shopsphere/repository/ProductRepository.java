@@ -3,23 +3,32 @@ package com.app.shopsphere.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import com.app.shopsphere.model.Product;
 
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
-    boolean existsByName(String name);
+        boolean existsByName(String name);
 
-    List<Product> findByActive(Boolean active);
+        long countByStockQuantityGreaterThan(Integer stockQuantity);
 
-    List<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrCategoryContainingIgnoreCase(
-            String name,
-            String description,
-            String category);
+        long countByStockQuantity(Integer stockQuantity);
 
-    List<Product> findByActiveTrueAndNameContainingIgnoreCaseOrActiveTrueAndDescriptionContainingIgnoreCaseOrActiveTrueAndCategoryContainingIgnoreCase(
-            String name,
-            String description,
-            String category);
+        long countByStockQuantityBetween(Integer min, Integer max);
+
+        List<Product> findByStockQuantityBetween(Integer min, Integer max);
+
+        List<Product> findByActive(Boolean active);
+
+        List<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrCategoryContainingIgnoreCase(
+                        String name,
+                        String description,
+                        String category);
+
+        List<Product> findByActiveTrueAndNameContainingIgnoreCaseOrActiveTrueAndDescriptionContainingIgnoreCaseOrActiveTrueAndCategoryContainingIgnoreCase(
+                        String name,
+                        String description,
+                        String category);
 
 }
