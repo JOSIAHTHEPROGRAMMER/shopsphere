@@ -1,7 +1,9 @@
 package com.app.shopsphere.controller;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.shopsphere.dto.UserRequest;
 import com.app.shopsphere.dto.UserResponse;
+import com.app.shopsphere.security.SecurityUtil;
 import com.app.shopsphere.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,37 +24,46 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
-public class UserController
+public class UserController {
 
-{
     private final UserService userService;
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
 
-        List<UserResponse> users = userService.getAllUsers();
+        if (!SecurityUtil.hasRole("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
-        return (users != null)
-                ? ResponseEntity.ok(users)
-                : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<?> getUser(@PathVariable Long id) {
+
+        if (!isSelfOrAdmin(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only view your own account");
+        }
+
+        Optional<UserResponse> userOpt = userService.getUserById(id);
+
+        return userOpt.isPresent()
+                ? ResponseEntity.ok(userOpt.get())
+                : ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserRequest user) {
 
+        if (!isSelfOrAdmin(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only update your own account");
+        }
+
         boolean updated = userService.updateUser(id, user);
 
-        return (updated)
+        return updated
                 ? ResponseEntity.ok("User updated successfully")
                 : ResponseEntity.badRequest().body("Failed to update user");
-
     }
 
     @PostMapping
@@ -59,7 +71,7 @@ public class UserController
 
         boolean created = userService.registerUser(userReq);
 
-        return (created)
+        return created
                 ? ResponseEntity.ok("User created successfully")
                 : ResponseEntity.badRequest().body("Failed to create user");
     }
@@ -67,11 +79,21 @@ public class UserController
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
 
+        if (!isSelfOrAdmin(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only delete your own account");
+        }
+
         boolean deleted = userService.deleteUserById(id);
 
-        return (deleted)
+        return deleted
                 ? ResponseEntity.ok("User deleted successfully")
                 : ResponseEntity.badRequest().body("Failed to delete user");
     }
 
+    private boolean isSelfOrAdmin(Long targetUserId) {
+
+        Long currentUserId = SecurityUtil.getCurrentUserId();
+
+        return currentUserId.equals(targetUserId) || SecurityUtil.hasRole("ADMIN");
+    }
 }

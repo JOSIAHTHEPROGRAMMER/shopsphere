@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.app.shopsphere.dto.CartSeed;
@@ -39,6 +40,7 @@ public class SeedService {
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
     private final OrderService orderService;
+    private final PasswordEncoder passwordEncoder;
 
     private static final List<OrderStatus> SEED_ORDER_STATUSES = List.of(
             OrderStatus.PENDING,
@@ -60,6 +62,10 @@ public class SeedService {
                 resource.getInputStream(),
                 new TypeReference<List<User>>() {
                 });
+
+        for (User user : users) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
 
         userRepository.saveAll(users);
     }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.app.shopsphere.dto.AddressDTO;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public boolean registerUser(UserRequest userReq) {
 
@@ -40,6 +42,8 @@ public class UserService {
         if (userRepository.existsByFirstNameAndLastName(user.getFirstName(), user.getLastName())) {
             return false;
         }
+
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         userRepository.save(user);
         return true;
@@ -81,7 +85,10 @@ public class UserService {
         user.setLastName(userReq.getLastName());
         user.setEmail(userReq.getEmail());
         user.setPhoneNumber(userReq.getPhoneNumber());
-        user.setPassword(userReq.getPassword());
+
+        if (userReq.getPassword() != null && !userReq.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(userReq.getPassword()));
+        }
 
         if (userReq.getAddress() != null) {
             Address address = user.getAddress();

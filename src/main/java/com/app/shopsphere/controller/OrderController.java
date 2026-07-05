@@ -1,14 +1,15 @@
 package com.app.shopsphere.controller;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +18,7 @@ import com.app.shopsphere.dto.OrderResponse;
 import com.app.shopsphere.dto.OrderStatsResponse;
 import com.app.shopsphere.dto.OrderStatusUpdateRequest;
 import com.app.shopsphere.enum_values.OrderStatus;
+import com.app.shopsphere.security.SecurityUtil;
 import com.app.shopsphere.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
@@ -29,8 +31,9 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<String> createOrder(
-            @RequestHeader("User-ID") String userId) {
+    public ResponseEntity<String> createOrder() {
+
+        String userId = String.valueOf(SecurityUtil.getCurrentUserId());
 
         boolean created = orderService.createOrder(userId);
 
@@ -41,37 +44,28 @@ public class OrderController {
 
     @GetMapping("/me")
     public ResponseEntity<List<OrderResponse>> getMyOrders(
-            @RequestHeader("User-ID") Long userId,
             @RequestParam(required = false) OrderStatus status) {
+
+        Long userId = SecurityUtil.getCurrentUserId();
 
         return status != null
                 ? ResponseEntity.ok(orderService.getOrdersByUserAndStatus(userId, status))
                 : ResponseEntity.ok(orderService.getOrdersByUser(userId));
     }
 
-    @GetMapping
-    public ResponseEntity<List<OrderResponse>> getOrders(
-            @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) OrderStatus status) {
+    @GetMapping("/me/stats")
+    public ResponseEntity<OrderStatsResponse> getMyOrderStats() {
 
-        if (userId != null && status != null) {
-            return ResponseEntity.ok(orderService.getOrdersByUserAndStatus(userId, status));
-        }
+        Long userId = SecurityUtil.getCurrentUserId();
 
-        if (userId != null) {
-            return ResponseEntity.ok(orderService.getOrdersByUser(userId));
-        }
-
-        if (status != null) {
-            return ResponseEntity.ok(orderService.getOrdersByStatus(status));
-        }
-
-        return ResponseEntity.ok(orderService.getAllOrders());
+        return orderService.getOrderStats(userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/status")
+    @PatchMapping("/{id}/status")
     public ResponseEntity<String> updateOrderStatus(
-            @RequestHeader("Order-ID") Long id,
+            @PathVariable Long id,
             @RequestBody OrderStatusUpdateRequest statusReq) {
 
         boolean updated = orderService.updateOrderStatus(id, statusReq.getStatus());
@@ -82,8 +76,23 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<String> cancelOrder(
-            @PathVariable Long id) {
+    public ResponseEntity<String> cancelOrder(@PathVariable Long id) {
+
+        Optional<OrderResponse> orderOpt = orderService.getOrderById(id);
+
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        OrderResponse order = orderOpt.get();
+
+        Long currentUserId = SecurityUtil.getCurrentUserId();
+        boolean isOwner = order.getUserId().equals(String.valueOf(currentUserId));
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+
+        if (!isOwner && !isAdmin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only cancel your own orders");
+        }
 
         boolean cancelled = orderService.cancelOrder(id);
 
@@ -91,14 +100,4 @@ public class OrderController {
                 ? ResponseEntity.ok("Order cancelled successfully")
                 : ResponseEntity.badRequest().body("Order cannot be cancelled");
     }
-
-    @GetMapping("/me/stats")
-    public ResponseEntity<OrderStatsResponse> getMyOrderStats(
-            @RequestHeader("User-ID") String userId) {
-
-        return orderService.getOrderStats(Long.valueOf(userId))
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
 }
