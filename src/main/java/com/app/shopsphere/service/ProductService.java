@@ -11,9 +11,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.app.shopsphere.dto.PagedResponse;
-import com.app.shopsphere.dto.ProductRequest;
-import com.app.shopsphere.dto.ProductResponse;
+import com.app.shopsphere.dto.product.PagedResponse;
+import com.app.shopsphere.dto.product.ProductRequest;
+import com.app.shopsphere.dto.product.ProductResponse;
 import com.app.shopsphere.model.Product;
 import com.app.shopsphere.repository.ProductRepository;
 import com.app.shopsphere.specification.ProductSpecification;

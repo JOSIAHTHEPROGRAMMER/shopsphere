@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.app.shopsphere.dto.AddressDTO;
-import com.app.shopsphere.dto.UserRequest;
-import com.app.shopsphere.dto.UserResponse;
+import com.app.shopsphere.dto.user.AddressDTO;
+import com.app.shopsphere.dto.user.UserRequest;
+import com.app.shopsphere.dto.user.UserResponse;
 import com.app.shopsphere.model.Address;
 import com.app.shopsphere.model.User;
 import com.app.shopsphere.repository.UserRepository;

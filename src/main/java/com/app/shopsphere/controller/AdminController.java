@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.shopsphere.dto.AdminDashboardResponse;
-import com.app.shopsphere.dto.AdminRevenueResponse;
-import com.app.shopsphere.dto.BestSellingProductResponse;
-import com.app.shopsphere.dto.OrderResponse;
-import com.app.shopsphere.dto.ProductResponse;
+import com.app.shopsphere.dto.admin.AdminDashboardResponse;
+import com.app.shopsphere.dto.admin.AdminRevenueResponse;
+import com.app.shopsphere.dto.admin.BestSellingProductResponse;
+import com.app.shopsphere.dto.order.OrderResponse;
+import com.app.shopsphere.dto.product.ProductResponse;
 import com.app.shopsphere.enum_values.OrderStatus;
 import com.app.shopsphere.service.AdminService;
 import com.app.shopsphere.service.OrderService;

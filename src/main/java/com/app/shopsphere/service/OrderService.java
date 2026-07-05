@@ -15,9 +15,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.app.shopsphere.dto.OrderItemResponse;
-import com.app.shopsphere.dto.OrderResponse;
-import com.app.shopsphere.dto.OrderStatsResponse;
+import com.app.shopsphere.dto.order.OrderItemResponse;
+import com.app.shopsphere.dto.order.OrderResponse;
+import com.app.shopsphere.dto.order.OrderStatsResponse;
 import com.app.shopsphere.enum_values.OrderStatus;
 import com.app.shopsphere.model.CartItem;
 import com.app.shopsphere.model.Order;

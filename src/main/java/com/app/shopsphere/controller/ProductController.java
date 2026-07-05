@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.shopsphere.dto.PagedResponse;
-import com.app.shopsphere.dto.ProductRequest;
-import com.app.shopsphere.dto.ProductResponse;
+import com.app.shopsphere.dto.product.PagedResponse;
+import com.app.shopsphere.dto.product.ProductRequest;
+import com.app.shopsphere.dto.product.ProductResponse;
 import com.app.shopsphere.service.ProductService;
 
 import lombok.RequiredArgsConstructor;

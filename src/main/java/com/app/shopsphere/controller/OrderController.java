@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.shopsphere.dto.OrderResponse;
-import com.app.shopsphere.dto.OrderStatsResponse;
-import com.app.shopsphere.dto.OrderStatusUpdateRequest;
+import com.app.shopsphere.dto.order.OrderResponse;
+import com.app.shopsphere.dto.order.OrderStatsResponse;
+import com.app.shopsphere.dto.order.OrderStatusUpdateRequest;
 import com.app.shopsphere.enum_values.OrderStatus;
 import com.app.shopsphere.security.SecurityUtil;
 import com.app.shopsphere.service.OrderService;

@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.shopsphere.dto.LoginRequest;
-import com.app.shopsphere.dto.LoginResponse;
+import com.app.shopsphere.dto.user.LoginRequest;
+import com.app.shopsphere.dto.user.LoginResponse;
 import com.app.shopsphere.service.AuthService;
 
 import lombok.RequiredArgsConstructor;

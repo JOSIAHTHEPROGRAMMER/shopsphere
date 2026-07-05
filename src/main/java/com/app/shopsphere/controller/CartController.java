@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.shopsphere.dto.CartRequest;
-import com.app.shopsphere.dto.CartResponse;
-import com.app.shopsphere.dto.CartSummary;
+import com.app.shopsphere.dto.cart.CartRequest;
+import com.app.shopsphere.dto.cart.CartResponse;
+import com.app.shopsphere.dto.cart.CartSummary;
 import com.app.shopsphere.security.SecurityUtil;
 import com.app.shopsphere.service.CartItemService;
 

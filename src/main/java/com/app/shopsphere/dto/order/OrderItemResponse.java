@@ -1,4 +1,4 @@
-package com.app.shopsphere.dto;
+package com.app.shopsphere.dto.order;
 
 import java.math.BigDecimal;
 

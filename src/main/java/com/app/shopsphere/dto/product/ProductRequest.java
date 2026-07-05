@@ -1,13 +1,13 @@
-package com.app.shopsphere.dto;
+package com.app.shopsphere.dto.product;
 
 import java.math.BigDecimal;
 
 import lombok.Data;
 
 @Data
-public class ProductResponse {
 
-    private String id;
+public class ProductRequest {
+
     private String name;
     private String description;
     private BigDecimal price;

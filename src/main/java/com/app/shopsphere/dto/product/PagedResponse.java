@@ -1,4 +1,4 @@
-package com.app.shopsphere.dto;
+package com.app.shopsphere.dto.product;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.app.shopsphere.dto;
+package com.app.shopsphere.dto.admin;
 
 import java.math.BigDecimal;
 

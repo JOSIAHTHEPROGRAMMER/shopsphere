@@ -5,8 +5,8 @@ import java.util.Optional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.app.shopsphere.dto.LoginRequest;
-import com.app.shopsphere.dto.LoginResponse;
+import com.app.shopsphere.dto.user.LoginRequest;
+import com.app.shopsphere.dto.user.LoginResponse;
 import com.app.shopsphere.model.User;
 import com.app.shopsphere.repository.UserRepository;
 import com.app.shopsphere.security.JwtUtil;

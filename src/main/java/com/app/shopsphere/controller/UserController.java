@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.shopsphere.dto.UserRequest;
-import com.app.shopsphere.dto.UserResponse;
+import com.app.shopsphere.dto.user.UserRequest;
+import com.app.shopsphere.dto.user.UserResponse;
 import com.app.shopsphere.security.SecurityUtil;
 import com.app.shopsphere.service.UserService;
 

@@ -1,17 +1,13 @@
-package com.app.shopsphere.dto;
-
-import com.app.shopsphere.enum_values.UserRole;
+package com.app.shopsphere.dto.user;
 
 import lombok.Data;
 
 @Data
-public class UserResponse {
-    private String id;
+public class UserRequest {
     private String firstName;
     private String lastName;
     private String email;
-    private UserRole role;
+    private String password;
     private String phoneNumber;
     private AddressDTO address;
-
 }

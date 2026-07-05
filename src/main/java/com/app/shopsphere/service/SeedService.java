@@ -12,8 +12,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.app.shopsphere.dto.CartSeed;
-import com.app.shopsphere.dto.CartSeedItem;
+import com.app.shopsphere.dto.cart.CartSeed;
+import com.app.shopsphere.dto.cart.CartSeedItem;
 
 import com.app.shopsphere.enum_values.OrderStatus;
 import com.app.shopsphere.model.CartItem;

@@ -1,4 +1,4 @@
-package com.app.shopsphere.dto;
+package com.app.shopsphere.dto.order;
 
 import com.app.shopsphere.enum_values.OrderStatus;
 

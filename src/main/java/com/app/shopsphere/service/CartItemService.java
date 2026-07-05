@@ -8,9 +8,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.app.shopsphere.dto.CartRequest;
-import com.app.shopsphere.dto.CartResponse;
-import com.app.shopsphere.dto.CartSummary;
+import com.app.shopsphere.dto.cart.CartRequest;
+import com.app.shopsphere.dto.cart.CartResponse;
+import com.app.shopsphere.dto.cart.CartSummary;
 import com.app.shopsphere.model.CartItem;
 import com.app.shopsphere.model.Product;
 import com.app.shopsphere.model.User;
