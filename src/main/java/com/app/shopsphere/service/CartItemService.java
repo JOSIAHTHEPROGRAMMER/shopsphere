@@ -3,7 +3,6 @@ package com.app.shopsphere.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -11,6 +10,9 @@ import org.springframework.stereotype.Service;
 import com.app.shopsphere.dto.cart.CartRequest;
 import com.app.shopsphere.dto.cart.CartResponse;
 import com.app.shopsphere.dto.cart.CartSummary;
+import com.app.shopsphere.exception.InsufficientStockException;
+import com.app.shopsphere.exception.ProductInactiveException;
+import com.app.shopsphere.exception.ResourceNotFoundException;
 import com.app.shopsphere.model.CartItem;
 import com.app.shopsphere.model.Product;
 import com.app.shopsphere.model.User;
@@ -30,28 +32,22 @@ public class CartItemService {
     private final UserRepository userRepository;
     private static final BigDecimal TAX_RATE = new BigDecimal("0.07");
 
-    public boolean addToCart(String userId, CartRequest cartReq) {
+    public void addToCart(String userId, CartRequest cartReq) {
 
-        Optional<Product> productOpt = productRepository.findById(cartReq.getProductId());
-
-        if (productOpt.isEmpty()) {
-            return false;
-        }
-
-        Product product = productOpt.get();
+        Product product = productRepository.findById(cartReq.getProductId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Product not found with id: " + cartReq.getProductId()));
 
         if (!product.getActive()) {
-            return false;
+            throw new ProductInactiveException("Product is not available: " + product.getName());
         }
 
-        if (product.getStockQuantity() < cartReq.getQuantity())
-            return false;
+        if (product.getStockQuantity() < cartReq.getQuantity()) {
+            throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
+        }
 
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
-        if (userOpt.isEmpty())
-            return false;
-
-        User user = userOpt.get();
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         CartItem prevCartItem = cartRepository.findByUserAndProduct(user, product);
 
@@ -71,34 +67,24 @@ public class CartItemService {
             cart.setPrice(product.getPrice().multiply(BigDecimal.valueOf(cartReq.getQuantity())));
 
             cartRepository.save(cart);
-
         }
-        return true;
     }
 
-    public boolean deleteItemFromCart(String userId, Long productId) {
+    public void deleteItemFromCart(String userId, Long productId) {
 
-        Optional<Product> productOpt = productRepository.findById(productId);
-        if (productOpt.isEmpty()) {
-            return false;
-        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
-        if (userOpt.isEmpty()) {
-            return false;
-        }
-
-        User user = userOpt.get();
-        Product product = productOpt.get();
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         CartItem cartItem = cartRepository.findByUserAndProduct(user, product);
 
         if (cartItem == null) {
-            return false;
+            throw new ResourceNotFoundException("Cart item not found for product id: " + productId);
         }
 
         cartRepository.delete(cartItem);
-        return true;
     }
 
     public void clearCart(String userId) {
@@ -107,29 +93,19 @@ public class CartItemService {
                 .ifPresent(user -> cartRepository.deleteByUser(user));
     }
 
-    public boolean addMultipleToCart(
-            String userId,
-            List<CartRequest> cartRequests) {
+    public void addMultipleToCart(String userId, List<CartRequest> cartRequests) {
 
         for (CartRequest cartRequest : cartRequests) {
-
-            if (!addToCart(userId, cartRequest)) {
-                return false;
-            }
+            addToCart(userId, cartRequest);
         }
-
-        return true;
     }
 
-    public Optional<CartSummary> getCartSummary(String userId) {
+    public CartSummary getCartSummary(String userId) {
 
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        if (userOpt.isEmpty()) {
-            return Optional.empty();
-        }
-
-        List<CartItem> cartItems = cartRepository.findByUserId(Long.valueOf(userId));
+        List<CartItem> cartItems = cartRepository.findByUserId(user.getId());
 
         int totalItems = cartItems.stream()
                 .mapToInt(item -> {
@@ -161,47 +137,36 @@ public class CartItemService {
         summary.setEstimatedTax(estimatedTax);
         summary.setTotal(total);
 
-        return Optional.of(summary);
+        return summary;
     }
 
-    public boolean updateCartItem(
-            String userId,
-            CartRequest cartReq) {
+    public void updateCartItem(String userId, CartRequest cartReq) {
 
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        if (userOpt.isEmpty()) {
-            return false;
-        }
         Long productId = cartReq.getProductId();
 
-        Optional<Product> productOpt = productRepository.findById(productId);
-
-        if (productOpt.isEmpty()) {
-            return false;
-        }
-
-        User user = userOpt.get();
-        Product product = productOpt.get();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
         CartItem cartItem = cartRepository.findByUserAndProduct(user, product);
 
         if (cartItem == null) {
-            return false;
+            throw new ResourceNotFoundException("Cart item not found for product id: " + productId);
         }
 
         if (!product.getActive()) {
-            return false;
+            throw new ProductInactiveException("Product is not available: " + product.getName());
         }
 
         if (cartReq.getQuantity() <= 0) {
-
             cartRepository.delete(cartItem);
-            return true;
+            return;
         }
 
         if (cartReq.getQuantity() > product.getStockQuantity()) {
-            return false;
+            throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
         }
 
         cartItem.setQuantity(cartReq.getQuantity());
@@ -211,8 +176,6 @@ public class CartItemService {
                         BigDecimal.valueOf(cartReq.getQuantity())));
 
         cartRepository.save(cartItem);
-
-        return true;
     }
 
     public List<CartResponse> getCart(
@@ -222,13 +185,10 @@ public class CartItemService {
             BigDecimal minPrice,
             BigDecimal maxPrice) {
 
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        if (userOpt.isEmpty()) {
-            return List.of();
-        }
-
-        return cartRepository.findByUserId(Long.valueOf(userId))
+        return cartRepository.findByUserId(user.getId())
                 .stream()
                 .filter(cart -> keyword == null || keyword.isBlank()
                         || cart.getProduct().getName().toLowerCase().contains(keyword.toLowerCase())

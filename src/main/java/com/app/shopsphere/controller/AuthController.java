@@ -1,8 +1,5 @@
 package com.app.shopsphere.controller;
 
-import java.util.Optional;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,14 +20,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginReq) {
-
-        Optional<LoginResponse> loginResponseOpt = authService.login(loginReq);
-
-        if (loginResponseOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
-        }
-
-        return ResponseEntity.ok(loginResponseOpt.get());
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginReq) {
+        return ResponseEntity.ok(authService.login(loginReq));
     }
 }

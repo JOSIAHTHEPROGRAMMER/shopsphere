@@ -1,7 +1,6 @@
 package com.app.shopsphere.service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +9,8 @@ import org.springframework.stereotype.Service;
 import com.app.shopsphere.dto.user.AddressDTO;
 import com.app.shopsphere.dto.user.UserRequest;
 import com.app.shopsphere.dto.user.UserResponse;
+import com.app.shopsphere.exception.BadRequestException;
+import com.app.shopsphere.exception.ResourceNotFoundException;
 import com.app.shopsphere.model.Address;
 import com.app.shopsphere.model.User;
 import com.app.shopsphere.repository.UserRepository;
@@ -22,56 +23,50 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public boolean registerUser(UserRequest userReq) {
+    public void registerUser(UserRequest userReq) {
 
         User user = new User();
         updateUserFromRequest(user, userReq);
 
         if (user.getFirstName() == null || user.getFirstName().isBlank() ||
                 user.getLastName() == null || user.getLastName().isBlank() ||
-
                 user.getEmail() == null || user.getEmail().isBlank() ||
                 user.getPassword() == null || user.getPassword().isBlank()) {
-            return false;
+            throw new BadRequestException("First name, last name, email, and password are required");
         }
 
         if (userRepository.existsByEmail(user.getEmail())) {
-            return false;
+            throw new BadRequestException("An account with this email already exists");
         }
 
         if (userRepository.existsByFirstNameAndLastName(user.getFirstName(), user.getLastName())) {
-            return false;
+            throw new BadRequestException("An account with this name already exists");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
         userRepository.save(user);
-        return true;
     }
 
-    public Optional<UserResponse> getUserById(Long id) {
+    public UserResponse getUserById(Long id) {
         return userRepository.findById(id)
-                .map(this::mapToUserResponse);
+                .map(this::mapToUserResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
-    public boolean updateUser(Long id, UserRequest updatedUserReq) {
+    public void updateUser(Long id, UserRequest updatedUserReq) {
 
-        return userRepository.findById(id)
-                .map(user -> {
-                    updateUserFromRequest(user, updatedUserReq);
-                    userRepository.save(user);
-                    return true;
-                })
-                .orElse(false);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        updateUserFromRequest(user, updatedUserReq);
+        userRepository.save(user);
     }
 
-    public boolean deleteUserById(Long id) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    userRepository.delete(user);
-                    return true;
-                })
-                .orElse(false);
+    public void deleteUserById(Long id) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        userRepository.delete(user);
     }
 
     public List<UserResponse> getAllUsers() {

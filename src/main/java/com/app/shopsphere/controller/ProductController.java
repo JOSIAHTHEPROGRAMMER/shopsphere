@@ -27,8 +27,6 @@ public class ProductController {
 
         private final ProductService productService;
 
-        // TODO: enforce active=true for unauthenticated/customer requests once auth
-        // exists
         @GetMapping
         public ResponseEntity<PagedResponse<ProductResponse>> getProducts(
                         @RequestParam(required = false) Boolean active,
@@ -60,41 +58,26 @@ public class ProductController {
 
         @GetMapping("/{id}")
         public ResponseEntity<ProductResponse> getProduct(@PathVariable Long id) {
-
-                return productService.getProductById(id)
-                                .map(ResponseEntity::ok)
-                                .orElseGet(() -> ResponseEntity.notFound().build());
+                return ResponseEntity.ok(productService.getProductById(id));
         }
 
         @PostMapping
         public ResponseEntity<String> createProduct(@RequestBody ProductRequest productReq) {
-
-                boolean created = productService.createProduct(productReq);
-
-                return created
-                                ? ResponseEntity.ok("Product created successfully")
-                                : ResponseEntity.badRequest().body("Failed to create product");
+                productService.createProduct(productReq);
+                return ResponseEntity.ok("Product created successfully");
         }
 
         @PutMapping("/{id}")
         public ResponseEntity<String> updateProduct(
                         @PathVariable Long id,
                         @RequestBody ProductRequest productReq) {
-
-                boolean updated = productService.updateProduct(id, productReq);
-
-                return updated
-                                ? ResponseEntity.ok("Product updated successfully")
-                                : ResponseEntity.badRequest().body("Failed to update product");
+                productService.updateProduct(id, productReq);
+                return ResponseEntity.ok("Product updated successfully");
         }
 
         @DeleteMapping("/{id}")
         public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
-
-                boolean deleted = productService.deleteProductById(id);
-
-                return deleted
-                                ? ResponseEntity.ok("Product deleted successfully")
-                                : ResponseEntity.badRequest().body("Failed to delete product");
+                productService.deleteProductById(id);
+                return ResponseEntity.ok("Product deleted successfully");
         }
 }

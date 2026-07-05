@@ -1,7 +1,6 @@
 package com.app.shopsphere.service;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -14,6 +13,8 @@ import org.springframework.stereotype.Service;
 import com.app.shopsphere.dto.product.PagedResponse;
 import com.app.shopsphere.dto.product.ProductRequest;
 import com.app.shopsphere.dto.product.ProductResponse;
+import com.app.shopsphere.exception.BadRequestException;
+import com.app.shopsphere.exception.ResourceNotFoundException;
 import com.app.shopsphere.model.Product;
 import com.app.shopsphere.repository.ProductRepository;
 import com.app.shopsphere.specification.ProductSpecification;
@@ -26,7 +27,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public boolean createProduct(ProductRequest productReq) {
+    public void createProduct(ProductRequest productReq) {
 
         Product product = new Product();
         updateProductFromRequest(product, productReq);
@@ -34,41 +35,37 @@ public class ProductService {
         if (product.getName() == null || product.getName().isBlank() ||
                 product.getPrice() == null ||
                 product.getStockQuantity() == null) {
-            return false;
+            throw new BadRequestException("Name, price, and stock quantity are required");
         }
 
         if (productRepository.existsByName(product.getName())) {
-            return false;
+            throw new BadRequestException("A product with this name already exists");
         }
 
         productRepository.save(product);
-        return true;
     }
 
-    public Optional<ProductResponse> getProductById(Long id) {
+    public ProductResponse getProductById(Long id) {
         return productRepository.findById(id)
-                .map(this::mapToProductResponse);
+                .map(this::mapToProductResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
     }
 
-    public boolean updateProduct(Long id, ProductRequest updatedProductReq) {
+    public void updateProduct(Long id, ProductRequest updatedProductReq) {
 
-        return productRepository.findById(id)
-                .map(product -> {
-                    updateProductFromRequest(product, updatedProductReq);
-                    productRepository.save(product);
-                    return true;
-                })
-                .orElse(false);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+
+        updateProductFromRequest(product, updatedProductReq);
+        productRepository.save(product);
     }
 
-    public boolean deleteProductById(Long id) {
+    public void deleteProductById(Long id) {
 
-        return productRepository.findById(id)
-                .map(product -> {
-                    productRepository.delete(product);
-                    return true;
-                })
-                .orElse(false);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+
+        productRepository.delete(product);
     }
 
     public PagedResponse<ProductResponse> getProducts(

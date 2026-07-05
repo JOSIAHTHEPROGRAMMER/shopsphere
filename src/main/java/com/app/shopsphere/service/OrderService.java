@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,6 +18,11 @@ import com.app.shopsphere.dto.order.OrderItemResponse;
 import com.app.shopsphere.dto.order.OrderResponse;
 import com.app.shopsphere.dto.order.OrderStatsResponse;
 import com.app.shopsphere.enum_values.OrderStatus;
+import com.app.shopsphere.exception.BadRequestException;
+import com.app.shopsphere.exception.InsufficientStockException;
+import com.app.shopsphere.exception.OrderStatusException;
+import com.app.shopsphere.exception.ProductInactiveException;
+import com.app.shopsphere.exception.ResourceNotFoundException;
 import com.app.shopsphere.model.CartItem;
 import com.app.shopsphere.model.Order;
 import com.app.shopsphere.model.OrderItem;
@@ -48,20 +52,16 @@ public class OrderService {
             OrderStatus.CANCELLED, Set.of());
 
     @Transactional
-    public boolean updateOrderStatus(Long id, OrderStatus newStatus) {
+    public void updateOrderStatus(Long id, OrderStatus newStatus) {
 
-        Optional<Order> orderOpt = orderRepository.findById(id);
-
-        if (orderOpt.isEmpty()) {
-            return false;
-        }
-
-        Order order = orderOpt.get();
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
         Set<OrderStatus> allowedNextStatuses = ALLOWED_TRANSITIONS.get(order.getStatus());
 
         if (allowedNextStatuses == null || !allowedNextStatuses.contains(newStatus)) {
-            return false;
+            throw new OrderStatusException(
+                    "Cannot transition order from " + order.getStatus() + " to " + newStatus);
         }
 
         if (newStatus == OrderStatus.CANCELLED) {
@@ -70,13 +70,11 @@ public class OrderService {
 
         order.setStatus(newStatus);
         orderRepository.save(order);
-
-        return true;
     }
 
     @Transactional
-    public boolean cancelOrder(Long id) {
-        return updateOrderStatus(id, OrderStatus.CANCELLED);
+    public void cancelOrder(Long id) {
+        updateOrderStatus(id, OrderStatus.CANCELLED);
     }
 
     private void restockOrderItems(Order order) {
@@ -93,20 +91,15 @@ public class OrderService {
     }
 
     @Transactional
-    public boolean createOrder(String userId) {
+    public void createOrder(String userId) {
 
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
-
-        if (userOpt.isEmpty()) {
-            return false;
-        }
-
-        User user = userOpt.get();
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         List<CartItem> cartItems = cartRepository.findByUserId(user.getId());
 
         if (cartItems.isEmpty()) {
-            return false;
+            throw new BadRequestException("Cart is empty");
         }
 
         BigDecimal totalPrice = BigDecimal.ZERO;
@@ -116,11 +109,11 @@ public class OrderService {
             Product product = cartItem.getProduct();
 
             if (!product.getActive()) {
-                return false;
+                throw new ProductInactiveException("Product is not available: " + product.getName());
             }
 
             if (product.getStockQuantity() < cartItem.getQuantity()) {
-                return false;
+                throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
             }
 
             totalPrice = totalPrice.add(cartItem.getPrice());
@@ -158,14 +151,12 @@ public class OrderService {
         orderRepository.save(order);
 
         cartRepository.deleteAll(cartItems);
-
-        return true;
     }
 
-    public Optional<OrderStatsResponse> getOrderStats(Long userId) {
+    public OrderStatsResponse getOrderStats(Long userId) {
 
         if (userRepository.findById(userId).isEmpty()) {
-            return Optional.empty();
+            throw new ResourceNotFoundException("User not found with id: " + userId);
         }
 
         List<Order> orders = orderRepository.findByUserId(userId);
@@ -203,12 +194,13 @@ public class OrderService {
         stats.setCancelledOrders(cancelledOrders);
         stats.setLastOrderDate(lastOrderDate);
 
-        return Optional.of(stats);
+        return stats;
     }
 
+    @SuppressWarnings("null")
     public List<OrderResponse> getRecentOrders(int limit) {
 
-        Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Order.desc(Order::getCreatedAt)));
 
         return orderRepository.findAll(pageable)
                 .stream()
@@ -216,9 +208,10 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public Optional<OrderResponse> getOrderById(Long id) {
+    public OrderResponse getOrderById(Long id) {
         return orderRepository.findById(id)
-                .map(this::mapToOrderResponse);
+                .map(this::mapToOrderResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
     }
 
     public List<OrderResponse> getAllOrders() {
@@ -249,13 +242,12 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public boolean deleteOrder(Long id) {
-        return orderRepository.findById(id)
-                .map(order -> {
-                    orderRepository.delete(order);
-                    return true;
-                })
-                .orElse(false);
+    public void deleteOrder(Long id) {
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+
+        orderRepository.delete(order);
     }
 
     private OrderResponse mapToOrderResponse(Order order) {

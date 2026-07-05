@@ -33,25 +33,16 @@ public class CartController {
         public ResponseEntity<String> addToCart(@RequestBody CartRequest cartReq) {
 
                 String userId = String.valueOf(SecurityUtil.getCurrentUserId());
-
-                boolean created = cartService.addToCart(userId, cartReq);
-
-                return created
-                                ? ResponseEntity.ok("product added to cart successfully")
-                                : ResponseEntity.badRequest()
-                                                .body("Product out of stock / not found or user not found");
+                cartService.addToCart(userId, cartReq);
+                return ResponseEntity.ok("product added to cart successfully");
         }
 
         @DeleteMapping("/items/{productId}")
         public ResponseEntity<Void> removeFromCart(@PathVariable Long productId) {
 
                 String userId = String.valueOf(SecurityUtil.getCurrentUserId());
-
-                boolean deleted = cartService.deleteItemFromCart(userId, productId);
-
-                return deleted
-                                ? ResponseEntity.noContent().build()
-                                : ResponseEntity.notFound().build();
+                cartService.deleteItemFromCart(userId, productId);
+                return ResponseEntity.noContent().build();
         }
 
         @GetMapping
@@ -76,19 +67,14 @@ public class CartController {
         public ResponseEntity<String> updateCartItem(@RequestBody CartRequest cartReq) {
 
                 String userId = String.valueOf(SecurityUtil.getCurrentUserId());
-
-                boolean updated = cartService.updateCartItem(userId, cartReq);
-
-                return updated
-                                ? ResponseEntity.ok("Cart updated successfully")
-                                : ResponseEntity.badRequest().body("Failed to update cart");
+                cartService.updateCartItem(userId, cartReq);
+                return ResponseEntity.ok("Cart updated successfully");
         }
 
         @DeleteMapping
         public ResponseEntity<Void> clearCart() {
 
                 String userId = String.valueOf(SecurityUtil.getCurrentUserId());
-
                 cartService.clearCart(userId);
                 return ResponseEntity.noContent().build();
         }
@@ -97,22 +83,15 @@ public class CartController {
         public ResponseEntity<String> addMultipleToCart(@RequestBody List<CartRequest> cartRequests) {
 
                 String userId = String.valueOf(SecurityUtil.getCurrentUserId());
-
-                boolean added = cartService.addMultipleToCart(userId, cartRequests);
-
-                return added
-                                ? ResponseEntity.ok("Products added successfully")
-                                : ResponseEntity.badRequest().body("Failed to add one or more products");
+                cartService.addMultipleToCart(userId, cartRequests);
+                return ResponseEntity.ok("Products added successfully");
         }
 
         @GetMapping("/summary")
         public ResponseEntity<CartSummary> getCartSummary() {
 
                 String userId = String.valueOf(SecurityUtil.getCurrentUserId());
-
-                return cartService.getCartSummary(userId)
-                                .map(ResponseEntity::ok)
-                                .orElse(ResponseEntity.notFound().build());
+                return ResponseEntity.ok(cartService.getCartSummary(userId));
         }
 
 }
