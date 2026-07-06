@@ -16,13 +16,20 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:}")
     private String secret;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration:86400000}")
     private long expiration;
 
     private SecretKey getSigningKey() {
+        if (secret == null || secret.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "JWT secret is not configured. " +
+                "Please set the JWT_SECRET environment variable or " +
+                "configure jwt.secret in application-local.properties for local development."
+            );
+        }
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
