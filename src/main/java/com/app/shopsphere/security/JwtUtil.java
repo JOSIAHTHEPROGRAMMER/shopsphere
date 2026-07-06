@@ -25,10 +25,9 @@ public class JwtUtil {
     private SecretKey getSigningKey() {
         if (secret == null || secret.trim().isEmpty()) {
             throw new IllegalStateException(
-                "JWT secret is not configured. " +
-                "Please set the JWT_SECRET environment variable or " +
-                "configure jwt.secret in application-local.properties for local development."
-            );
+                    "JWT secret is not configured. " +
+                            "Please set the JWT_SECRET environment variable or " +
+                            "configure jwt.secret in application-local.properties for local development.");
         }
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
