@@ -15,6 +15,10 @@ import com.app.shopsphere.security.JwtAuthFilter;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Configures the security rules, password hashing, and JWT authentication flow
+ * for the API.
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor

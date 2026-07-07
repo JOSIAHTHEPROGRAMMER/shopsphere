@@ -20,8 +20,12 @@ import com.app.shopsphere.exception.ForbiddenException;
 import com.app.shopsphere.security.SecurityUtil;
 import com.app.shopsphere.service.OrderService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Exposes order endpoints for checkout, history, and status updates.
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/orders")
@@ -29,6 +33,11 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    /**
+     * Creates a new order from the authenticated user's current cart.
+     *
+     * @return a confirmation message
+     */
     @PostMapping
     public ResponseEntity<String> createOrder() {
 
@@ -37,6 +46,12 @@ public class OrderController {
         return ResponseEntity.ok("Order created successfully");
     }
 
+    /**
+     * Returns the current user's order history, optionally filtered by status.
+     *
+     * @param status optional order status filter
+     * @return the matching orders for the authenticated user
+     */
     @GetMapping("/me")
     public ResponseEntity<List<OrderResponse>> getMyOrders(
             @RequestParam(required = false) OrderStatus status) {
@@ -48,6 +63,11 @@ public class OrderController {
                 : ResponseEntity.ok(orderService.getOrdersByUser(userId));
     }
 
+    /**
+     * Returns aggregate statistics for the authenticated user's order history.
+     *
+     * @return the user's order summary data
+     */
     @GetMapping("/me/stats")
     public ResponseEntity<OrderStatsResponse> getMyOrderStats() {
 
@@ -55,15 +75,28 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrderStats(userId));
     }
 
+    /**
+     * Updates an order status when the caller has administrative access.
+     *
+     * @param id        the order identifier
+     * @param statusReq the new order status value
+     * @return a confirmation message
+     */
     @PatchMapping("/{id}/status")
     public ResponseEntity<String> updateOrderStatus(
             @PathVariable Long id,
-            @RequestBody OrderStatusUpdateRequest statusReq) {
+            @RequestBody @Valid OrderStatusUpdateRequest statusReq) {
 
         orderService.updateOrderStatus(id, statusReq.getStatus());
         return ResponseEntity.ok("Order status updated successfully");
     }
 
+    /**
+     * Cancels an order when the caller owns it or has admin access.
+     *
+     * @param id the order identifier
+     * @return a confirmation message
+     */
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<String> cancelOrder(@PathVariable Long id) {
 

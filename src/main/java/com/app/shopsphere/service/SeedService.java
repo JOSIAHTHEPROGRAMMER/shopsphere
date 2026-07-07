@@ -30,6 +30,10 @@ import lombok.RequiredArgsConstructor;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Seeds the local development database with sample users, products, carts, and
+ * orders.
+ */
 @Service
 @RequiredArgsConstructor
 public class SeedService {
@@ -54,6 +58,12 @@ public class SeedService {
             OrderStatus.SHIPPED,
             OrderStatus.DELIVERED);
 
+    /**
+     * Loads sample users from the classpath seed data and stores them with hashed
+     * passwords.
+     *
+     * @throws IOException when the seed file cannot be read
+     */
     public void seedUsers() throws IOException {
 
         ClassPathResource resource = new ClassPathResource("seed/users.json");
@@ -70,6 +80,11 @@ public class SeedService {
         userRepository.saveAll(users);
     }
 
+    /**
+     * Loads sample products from the classpath seed data.
+     *
+     * @throws IOException when the seed file cannot be read
+     */
     public void seedProducts() throws IOException {
 
         ClassPathResource resource = new ClassPathResource("seed/products.json");
@@ -82,6 +97,11 @@ public class SeedService {
         productRepository.saveAll(products);
     }
 
+    /**
+     * Recreates cart seed data for the sample users and products.
+     *
+     * @throws IOException when the seed file cannot be read
+     */
     @Transactional
     public void seedCarts() throws IOException {
 
@@ -139,6 +159,12 @@ public class SeedService {
         cartRepository.saveAll(cartItems);
     }
 
+    /**
+     * Seeds a representative set of orders by converting the seeded carts into
+     * completed order workflows.
+     *
+     * @throws IOException when the seed data cannot be read
+     */
     @Transactional
     public void seedOrders() throws IOException {
 
