@@ -11,6 +11,9 @@ import com.app.shopsphere.service.SeedService;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Exposes seed endpoints for loading local development sample data.
+ */
 @RestController
 @RequestMapping("/api/seed")
 @RequiredArgsConstructor
@@ -18,6 +21,11 @@ public class SeedController {
 
     private final SeedService seedService;
 
+    /**
+     * Seeds sample users into the local database.
+     *
+     * @return a confirmation message or an error response
+     */
     @PostMapping("/users")
     public ResponseEntity<String> seedUsers() {
         try {
@@ -29,6 +37,11 @@ public class SeedController {
         }
     }
 
+    /**
+     * Seeds sample products into the local database.
+     *
+     * @return a confirmation message or an error response
+     */
     @PostMapping("/products")
     public ResponseEntity<String> seedProducts() {
         try {
@@ -40,6 +53,11 @@ public class SeedController {
         }
     }
 
+    /**
+     * Seeds sample cart contents for the local data set.
+     *
+     * @return a confirmation message or an error response
+     */
     @PostMapping("/carts")
     public ResponseEntity<String> seedCarts() {
 
@@ -52,6 +70,11 @@ public class SeedController {
         }
     }
 
+    /**
+     * Seeds sample orders and order state transitions for local development.
+     *
+     * @return a confirmation message or an error response
+     */
     @PostMapping("/orders")
     public ResponseEntity<String> seedOrders() {
 

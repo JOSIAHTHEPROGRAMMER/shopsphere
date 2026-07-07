@@ -14,15 +14,30 @@ import com.app.shopsphere.exception.ResourceNotFoundException;
 import com.app.shopsphere.model.Address;
 import com.app.shopsphere.model.User;
 import com.app.shopsphere.repository.UserRepository;
+import com.app.shopsphere.security.LogMaskUtil;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Manages account registration, profile updates, and user lookups for the
+ * storefront.
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Registers a new user account after validating the required profile fields and
+     * uniqueness rules.
+     *
+     * @param userReq the incoming registration payload
+     * @throws BadRequestException when required data is missing or duplicates are
+     *                             found
+     */
     public void registerUser(UserRequest userReq) {
 
         User user = new User();
@@ -44,14 +59,31 @@ public class UserService {
         }
 
         userRepository.save(user);
+
+        log.info("User registered: {} (id: {})", LogMaskUtil.maskEmail(user.getEmail()), user.getId());
     }
 
+    /**
+     * Returns a user profile DTO for the requested identifier.
+     *
+     * @param id the user identifier
+     * @return the public-facing user profile data
+     * @throws ResourceNotFoundException when the account does not exist
+     */
     public UserResponse getUserById(Long id) {
         return userRepository.findById(id)
                 .map(this::mapToUserResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
+    /**
+     * Updates an existing user profile and preserves the password unless a new one
+     * is supplied.
+     *
+     * @param id             the user identifier to update
+     * @param updatedUserReq the incoming profile changes
+     * @throws ResourceNotFoundException when the account does not exist
+     */
     public void updateUser(Long id, UserRequest updatedUserReq) {
 
         User user = userRepository.findById(id)
@@ -59,16 +91,31 @@ public class UserService {
 
         updateUserFromRequest(user, updatedUserReq);
         userRepository.save(user);
+
+        log.info("User updated: {} (id: {})", LogMaskUtil.maskEmail(user.getEmail()), user.getId());
     }
 
+    /**
+     * Removes an account from the system.
+     *
+     * @param id the user identifier
+     * @throws ResourceNotFoundException when the account does not exist
+     */
     public void deleteUserById(Long id) {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         userRepository.delete(user);
+
+        log.warn("User deleted: {} (id: {})", LogMaskUtil.maskEmail(user.getEmail()), id);
     }
 
+    /**
+     * Returns every registered user as a response DTO.
+     *
+     * @return the full user list
+     */
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(this::mapToUserResponse)

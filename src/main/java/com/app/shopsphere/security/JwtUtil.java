@@ -13,6 +13,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
+/**
+ * Creates and verifies JWTs used to authenticate requests to the API.
+ */
 @Component
 public class JwtUtil {
 

@@ -35,7 +35,13 @@ import com.app.shopsphere.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Coordinates order state transitions, checkout creation, and order history
+ * retrieval.
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -51,6 +57,16 @@ public class OrderService {
             OrderStatus.DELIVERED, Set.of(),
             OrderStatus.CANCELLED, Set.of());
 
+    /**
+     * Moves an existing order to a new lifecycle state when the transition is
+     * allowed.
+     *
+     * @param id        the order identifier
+     * @param newStatus the target status
+     * @throws ResourceNotFoundException when the order cannot be found
+     * @throws OrderStatusException      when the requested transition is not
+     *                                   permitted
+     */
     @Transactional
     public void updateOrderStatus(Long id, OrderStatus newStatus) {
 
@@ -64,14 +80,26 @@ public class OrderService {
                     "Cannot transition order from " + order.getStatus() + " to " + newStatus);
         }
 
+        OrderStatus previousStatus = order.getStatus();
+
         if (newStatus == OrderStatus.CANCELLED) {
             restockOrderItems(order);
         }
 
         order.setStatus(newStatus);
         orderRepository.save(order);
+
+        log.info("Order {} status changed: {} -> {}", id, previousStatus, newStatus);
     }
 
+    /**
+     * Cancels an order through the standard status transition path.
+     *
+     * @param id the order identifier
+     * @throws ResourceNotFoundException when the order cannot be found
+     * @throws OrderStatusException      when the order cannot be cancelled from its
+     *                                   current state
+     */
     @Transactional
     public void cancelOrder(Long id) {
         updateOrderStatus(id, OrderStatus.CANCELLED);
@@ -87,9 +115,23 @@ public class OrderService {
                     product.getStockQuantity() + orderItem.getQuantity());
 
             productRepository.save(product);
+
+            log.info("Restocked product {} ({}): +{} units, new stock: {}",
+                    product.getId(), product.getName(), orderItem.getQuantity(), product.getStockQuantity());
         }
     }
 
+    /**
+     * Converts the authenticated user's cart into a new pending order.
+     *
+     * @param userId the current user identifier
+     * @throws ResourceNotFoundException  when the user cannot be found
+     * @throws BadRequestException        when the cart is empty
+     * @throws ProductInactiveException   when a cart item references an inactive
+     *                                    product
+     * @throws InsufficientStockException when current inventory cannot satisfy the
+     *                                    cart quantities
+     */
     @Transactional
     public void createOrder(String userId) {
 
@@ -151,8 +193,19 @@ public class OrderService {
         orderRepository.save(order);
 
         cartRepository.deleteAll(cartItems);
+
+        log.info("Order {} created for user {}: {} items, total {}",
+                order.getId(), userId, orderItems.size(), totalPrice);
     }
 
+    /**
+     * Aggregates a user's order history into a compact statistics view.
+     *
+     * @param userId the user whose order history should be summarized
+     * @return a summary of orders placed, cancelled orders, spend, and the most
+     *         recent order date
+     * @throws ResourceNotFoundException when the user cannot be found
+     */
     public OrderStatsResponse getOrderStats(Long userId) {
 
         if (userRepository.findById(userId).isEmpty()) {
@@ -197,10 +250,15 @@ public class OrderService {
         return stats;
     }
 
-    @SuppressWarnings("null")
+    /**
+     * Returns the most recently created orders up to the requested limit.
+     *
+     * @param limit the maximum number of orders to return
+     * @return the newest orders in descending creation order
+     */
     public List<OrderResponse> getRecentOrders(int limit) {
 
-        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Order.desc(Order::getCreatedAt)));
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());
 
         return orderRepository.findAll(pageable)
                 .stream()
@@ -208,12 +266,24 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Fetches a single order by its identifier.
+     *
+     * @param id the order identifier
+     * @return the mapped order payload
+     * @throws ResourceNotFoundException when the order cannot be found
+     */
     public OrderResponse getOrderById(Long id) {
         return orderRepository.findById(id)
                 .map(this::mapToOrderResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
     }
 
+    /**
+     * Returns every order in the system.
+     *
+     * @return the complete order list for administrative use
+     */
     public List<OrderResponse> getAllOrders() {
         return orderRepository.findAll()
                 .stream()
@@ -221,6 +291,12 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns all orders belonging to a specific user.
+     *
+     * @param userId the user identifier
+     * @return the matching orders
+     */
     public List<OrderResponse> getOrdersByUser(Long userId) {
         return orderRepository.findByUserId(userId)
                 .stream()
@@ -228,6 +304,12 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns all orders in the requested lifecycle state.
+     *
+     * @param status the order status filter
+     * @return the matching orders
+     */
     public List<OrderResponse> getOrdersByStatus(OrderStatus status) {
         return orderRepository.findByStatus(status)
                 .stream()
@@ -235,6 +317,13 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns orders for a user filtered by a specific status.
+     *
+     * @param userId the user identifier
+     * @param status the order status filter
+     * @return the matching orders
+     */
     public List<OrderResponse> getOrdersByUserAndStatus(Long userId, OrderStatus status) {
         return orderRepository.findByUserIdAndStatus(userId, status)
                 .stream()
@@ -242,12 +331,20 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Permanently removes an order record.
+     *
+     * @param id the order identifier
+     * @throws ResourceNotFoundException when the order cannot be found
+     */
     public void deleteOrder(Long id) {
 
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
         orderRepository.delete(order);
+
+        log.warn("Order {} permanently deleted", id);
     }
 
     private OrderResponse mapToOrderResponse(Order order) {

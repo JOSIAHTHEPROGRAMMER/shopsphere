@@ -3,6 +3,9 @@ package com.app.shopsphere.security;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+/**
+ * Provides accessors for the currently authenticated user and role information.
+ */
 public class SecurityUtil {
 
     private SecurityUtil() {

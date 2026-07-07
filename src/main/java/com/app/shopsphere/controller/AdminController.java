@@ -20,6 +20,9 @@ import com.app.shopsphere.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Exposes administrative reporting endpoints for store oversight.
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
@@ -28,11 +31,23 @@ public class AdminController {
     private final AdminService adminService;
     private final OrderService orderService;
 
+    /**
+     * Returns the aggregated dashboard metrics used by administrators.
+     *
+     * @return the dashboard summary payload
+     */
     @GetMapping("/dashboard")
     public ResponseEntity<AdminDashboardResponse> getDashboard() {
         return ResponseEntity.ok(adminService.getDashboard());
     }
 
+    /**
+     * Returns revenue metrics for the requested time range.
+     *
+     * @param from optional start date
+     * @param to   optional end date
+     * @return the revenue summary response
+     */
     @GetMapping("/revenue")
     public ResponseEntity<AdminRevenueResponse> getRevenue(
             @RequestParam(required = false) LocalDateTime from,
@@ -40,24 +55,49 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getRevenue(from, to));
     }
 
+    /**
+     * Returns the highest volume products for sales reporting.
+     *
+     * @param limit the maximum number of products to include
+     * @return the ranked sales summary
+     */
     @GetMapping("/best-selling")
     public ResponseEntity<List<BestSellingProductResponse>> getBestSelling(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(adminService.getBestSelling(limit));
     }
 
+    /**
+     * Returns products that are at or below the supplied stock threshold.
+     *
+     * @param threshold the stock threshold to evaluate
+     * @return the low inventory products
+     */
     @GetMapping("/low-stock")
     public ResponseEntity<List<ProductResponse>> getLowStock(
             @RequestParam(defaultValue = "10") int threshold) {
         return ResponseEntity.ok(adminService.getLowStock(threshold));
     }
 
+    /**
+     * Returns the most recently created orders for admin review.
+     *
+     * @param limit the maximum number of orders to include
+     * @return the recent order list
+     */
     @GetMapping("/recent-orders")
     public ResponseEntity<List<OrderResponse>> getRecentOrders(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(orderService.getRecentOrders(limit));
     }
 
+    /**
+     * Returns orders optionally filtered by a user or an order status.
+     *
+     * @param userId optional user filter
+     * @param status optional status filter
+     * @return the matching orders
+     */
     @GetMapping("/orders")
     public ResponseEntity<List<OrderResponse>> getOrders(
             @RequestParam(required = false) Long userId,

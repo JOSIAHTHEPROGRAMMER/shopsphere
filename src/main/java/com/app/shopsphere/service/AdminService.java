@@ -25,6 +25,10 @@ import com.app.shopsphere.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Exposes dashboard and reporting data for administrative review of catalog and
+ * order activity.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminService {
@@ -35,6 +39,12 @@ public class AdminService {
 
     private static final int DEFAULT_LOW_STOCK_THRESHOLD = 10;
 
+    /**
+     * Builds the administrative dashboard summary for products, users, orders, and
+     * stock health.
+     *
+     * @return the dashboard aggregates for the current catalog and order state
+     */
     @Transactional
     public AdminDashboardResponse getDashboard() {
 
@@ -61,6 +71,13 @@ public class AdminService {
         return res;
     }
 
+    /**
+     * Calculates revenue totals for the requested time window.
+     *
+     * @param from the inclusive start of the reporting window
+     * @param to   the inclusive end of the reporting window
+     * @return the revenue metrics for completed orders in the selected range
+     */
     public AdminRevenueResponse getRevenue(LocalDateTime from, LocalDateTime to) {
 
         List<Order> orders = (from != null && to != null)
@@ -89,6 +106,12 @@ public class AdminService {
         return res;
     }
 
+    /**
+     * Computes the most frequently purchased products for the admin reporting view.
+     *
+     * @param limit the maximum number of products to return
+     * @return the ranked product sales summary
+     */
     @Transactional
     public List<BestSellingProductResponse> getBestSelling(int limit) {
 
@@ -127,6 +150,12 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns products that are below the provided stock threshold.
+     *
+     * @param threshold the maximum stock quantity to include in the result
+     * @return the low inventory products for admin review
+     */
     public List<ProductResponse> getLowStock(int threshold) {
 
         return productRepository.findByStockQuantityBetween(1, threshold)
