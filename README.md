@@ -7,12 +7,13 @@ ShopSphere is a single seller e-commerce backend built with Spring Boot. It cove
 ![License MIT](https://img.shields.io/badge/License-MIT-yellow)
 ![Maven](https://img.shields.io/badge/Build-Maven-blue)
 ![H2](https://img.shields.io/badge/Database-H2-darkgray)
-
+[![View on GitHub](https://img.shields.io/badge/GitHub-Repository-181717?logo=github)](https://github.com/JOSIAHTHEPROGRAMMER/shopsphere)
 ## Table of Contents
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
+- [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [API Endpoints](#api-endpoints)
 - [Authentication](#authentication)
@@ -85,6 +86,121 @@ The application follows a layered structure with clear separation between concer
 - DTO layer shapes request and response payloads
 - Exception layer standardizes API errors
 - Security layer handles JWT parsing and authorization
+
+
+## Project Structure
+
+```
+├── .mvn/
+│   └── wrapper/
+│       └── maven-wrapper.properties
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── app/
+│   │   │           └── shopsphere/
+│   │   │               ├── config/
+│   │   │               │   └── SecurityConfig.java
+│   │   │               ├── controller/
+│   │   │               │   ├── AdminController.java
+│   │   │               │   ├── AuthController.java
+│   │   │               │   ├── CartController.java
+│   │   │               │   ├── OrderController.java
+│   │   │               │   ├── ProductController.java
+│   │   │               │   ├── SeedController.java
+│   │   │               │   └── UserController.java
+│   │   │               ├── dto/
+│   │   │               │   ├── admin/
+│   │   │               │   │   ├── AdminDashboardResponse.java
+│   │   │               │   │   ├── AdminRevenueResponse.java
+│   │   │               │   │   └── BestSellingProductResponse.java
+│   │   │               │   ├── cart/
+│   │   │               │   │   ├── AddToCartRequest.java
+│   │   │               │   │   ├── BatchAddToCartRequest.java
+│   │   │               │   │   ├── CartResponse.java
+│   │   │               │   │   ├── CartSeed.java
+│   │   │               │   │   ├── CartSeedItem.java
+│   │   │               │   │   ├── CartSummary.java
+│   │   │               │   │   └── UpdateCartRequest.java
+│   │   │               │   ├── exception/
+│   │   │               │   │   ├── ErrorResponse.java
+│   │   │               │   │   └── ValidationErrorResponse.java
+│   │   │               │   ├── order/
+│   │   │               │   │   ├── OrderItemResponse.java
+│   │   │               │   │   ├── OrderResponse.java
+│   │   │               │   │   ├── OrderStatsResponse.java
+│   │   │               │   │   └── OrderStatusUpdateRequest.java
+│   │   │               │   ├── product/
+│   │   │               │   │   ├── PagedResponse.java
+│   │   │               │   │   ├── ProductRequest.java
+│   │   │               │   │   └── ProductResponse.java
+│   │   │               │   └── user/
+│   │   │               │       ├── AddressDTO.java
+│   │   │               │       ├── LoginRequest.java
+│   │   │               │       ├── LoginResponse.java
+│   │   │               │       ├── UserRequest.java
+│   │   │               │       └── UserResponse.java
+│   │   │               ├── enum_values/
+│   │   │               │   ├── OrderStatus.java
+│   │   │               │   └── UserRole.java
+│   │   │               ├── exception/
+│   │   │               │   ├── BadRequestException.java
+│   │   │               │   ├── ForbiddenException.java
+│   │   │               │   ├── GlobalExceptionHandler.java
+│   │   │               │   ├── InsufficientStockException.java
+│   │   │               │   ├── OrderStatusException.java
+│   │   │               │   ├── ProductInactiveException.java
+│   │   │               │   ├── ResourceNotFoundException.java
+│   │   │               │   └── UnauthorizedException.java
+│   │   │               ├── model/
+│   │   │               │   ├── Address.java
+│   │   │               │   ├── CartItem.java
+│   │   │               │   ├── Order.java
+│   │   │               │   ├── OrderItem.java
+│   │   │               │   ├── Product.java
+│   │   │               │   └── User.java
+│   │   │               ├── repository/
+│   │   │               │   ├── CartItemRepository.java
+│   │   │               │   ├── OrderRepository.java
+│   │   │               │   ├── ProductRepository.java
+│   │   │               │   └── UserRepository.java
+│   │   │               ├── security/
+│   │   │               │   ├── JwtAuthFilter.java
+│   │   │               │   ├── JwtUtil.java
+│   │   │               │   ├── LogMaskUtil.java
+│   │   │               │   └── SecurityUtil.java
+│   │   │               ├── service/
+│   │   │               │   ├── AdminService.java
+│   │   │               │   ├── AuthService.java
+│   │   │               │   ├── CartItemService.java
+│   │   │               │   ├── OrderService.java
+│   │   │               │   ├── ProductService.java
+│   │   │               │   ├── SeedService.java
+│   │   │               │   └── UserService.java
+│   │   │               ├── specification/
+│   │   │               │   └── ProductSpecification.java
+│   │   │               └── ShopsphereApplication.java
+│   │   └── resources/
+│   │       └── application.properties
+│   └── test/
+│       └── java/
+│           └── com/
+│               └── app/
+│                   └── shopsphere/
+│                       ├── AuthServiceTest.java
+│                       ├── CartItemServiceTest.java
+│                       ├── OrderServiceTest.java
+│                       ├── ProductServiceTest.java
+│                       ├── ShopsphereApplicationTests.java
+│                       └── UserServiceTest.java
+├── .gitattributes
+├── .gitignore
+├── mvnw
+├── mvnw.cmd
+├── pom.xml
+└── README.md
+```
 
 ## Getting Started
 
@@ -197,7 +313,7 @@ The application currently supports three roles.
 
 ## Testing
 
-The unit test suite covers the main service layer with JUnit 5 and Mockito. The project is set up so the core business rules can be tested independently from the web layer.
+The project includes a suite of 45 unit tests covering the service layer with JUnit 5 and Mockito. Coverage spans the core business logic across products, carts, orders, users, and authentication, including the order status state machine, inventory restocking on cancellation, password handling on account updates, and the authentication flow. The service layer is tested independently from the web layer so business rules can be verified without needing a running server or database.
 
 ## Project Status
 
